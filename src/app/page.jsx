@@ -25,11 +25,10 @@ export default function Home() {
   const [nacimientos, setNacimientos] = useState([]);
   const [actividades, setActividades] = useState([]);
 
-  const [mensaje, setMensaje] = useState(""); // 💬 Notificación visual
+  const [mensaje, setMensaje] = useState("");
 
   const tabs = ["animales", "producciones", "sanidades", "nacimientos", "actividades", "estadisticas"];
 
-  // 🔹 Trae datos de una tabla
   const fetchTable = async (table, setter, orderByField = "id", desc = false) => {
     try {
       const { data, error } = await supabase
@@ -44,7 +43,6 @@ export default function Home() {
     }
   };
 
-  // 🔁 Carga inicial de datos y verificación de usuario
   useEffect(() => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
@@ -56,7 +54,6 @@ export default function Home() {
       }
       setLoadingUser(false);
 
-      // Escuchar cambios de sesión
       const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
         if (!session) router.push("/login");
       });
@@ -145,12 +142,16 @@ export default function Home() {
   const guardarSanidad = async (san) => {
     try {
       if (!san.animalido || !san.fecha || !san.tipo || !san.dosis)
-        throw new Error("Todos los campos son obligatorios");
+        throw new Error("Los campos: Animal, Fecha, Tipo y Dosis son obligatorios");
 
       const sanData = {
-        ...san,
         animalido: Number(san.animalido),
+        fecha: san.fecha,
+        tipo: san.tipo,
         dosis: Number(san.dosis),
+        descripcion: san.descripcion || null,
+        proximaFecha: san.proximaFecha || null,
+        veterinario: san.veterinario || null,
       };
 
       const { data, error } = await supabase.from("sanidades").insert([sanData]).select();
