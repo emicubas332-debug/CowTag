@@ -1,6 +1,6 @@
+// src/components/Lecturas.js
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase";
+import { supabase } from "../lib/supabase";
 import useAuth from "../hooks/useAuth";
 
 export default function Lecturas() {
@@ -9,12 +9,39 @@ export default function Lecturas() {
 
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, "historialEscaneos"), orderBy("fechaHora", "desc"));
-    const unsubscribe = onSnapshot(q, snapshot => {
-      const lista = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setLecturas(lista);
-    });
-    return () => unsubscribe();
+
+    // Función para obtener historial
+    const fetchLecturas = async () => {
+      const { data, error } = await supabase
+        .from("historialEscaneos")
+        .select("*")
+        .order("fechaHora", { ascending: false });
+
+      if (error) {
+        console.error("Error al obtener lecturas:", error);
+      } else {
+        setLecturas(data);
+      }
+    };
+
+    fetchLecturas();
+
+    // Realtime: escuchar cambios en la tabla
+    const subscription = supabase
+      .channel("public:historialEscaneos")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "historialEscaneos" },
+        (payload) => {
+          // Cada vez que hay un cambio, recarga las lecturas
+          fetchLecturas();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [user]);
 
   if (!user) return <p>Cargando...</p>;
@@ -31,10 +58,10 @@ export default function Lecturas() {
           </tr>
         </thead>
         <tbody>
-          {lecturas.map(l => (
+          {lecturas.map((l) => (
             <tr key={l.id}>
               <td>{l.tagID}</td>
-              <td>{l.fechaHora?.toDate().toLocaleString() || "Sin fecha"}</td>
+              <td>{l.fechaHora ? new Date(l.fechaHora).toLocaleString() : "Sin fecha"}</td>
               <td>{l.lector || "Desconocido"}</td>
             </tr>
           ))}

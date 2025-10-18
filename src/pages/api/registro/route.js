@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/supabaseClient"; // Ajusta la ruta si tu cliente está en otra carpeta
+import { supabase } from "../../../lib/supabase"; // Ajusta la ruta si tu cliente está en otra carpeta
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
