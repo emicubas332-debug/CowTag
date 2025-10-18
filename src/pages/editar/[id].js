@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../../firebase/firebaseConfig";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/router";
 
 export default function Editar() {
@@ -11,17 +10,23 @@ export default function Editar() {
 
   useEffect(() => {
     if (!id) return;
+
     const fetchAnimal = async () => {
-      const docRef = doc(db, "animales", id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setAnimal(docSnap.data());
-      } else {
-        alert("Animal no encontrado");
+      const { data, error } = await supabase
+        .from("animales")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        alert("Animal no encontrado: " + error.message);
         router.push("/");
+      } else {
+        setAnimal(data);
       }
       setLoading(false);
     };
+
     fetchAnimal();
   }, [id, router]);
 
@@ -32,17 +37,23 @@ export default function Editar() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!animal) return;
+
     try {
-      const docRef = doc(db, "animales", id);
-      await updateDoc(docRef, {
-        ...animal,
-        vacunas: Number(animal.vacunas),
-        peso: Number(animal.peso),
-      });
+      const { error } = await supabase
+        .from("animales")
+        .update({
+          ...animal,
+          vacunas: Number(animal.vacunas),
+          peso: Number(animal.peso),
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
       alert("Animal actualizado");
       router.push("/");
-    } catch (error) {
-      alert("Error: " + error.message);
+    } catch (err) {
+      alert("Error: " + err.message);
     }
   };
 
@@ -50,18 +61,36 @@ export default function Editar() {
   if (!animal) return null;
 
   return (
-    <div style={{maxWidth: 600, margin: "auto", padding: 20}}>
+    <div style={{ maxWidth: 600, margin: "auto", padding: 20 }}>
       <h1>Editar Animal</h1>
-      <form onSubmit={handleSubmit} style={{display:"flex", flexDirection:"column", gap: 10}}>
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: "flex", flexDirection: "column", gap: 10 }}
+      >
         <input name="tagID" value={animal.tagID} onChange={handleChange} disabled />
         <input name="nombre" value={animal.nombre} onChange={handleChange} />
         <input name="dueno" value={animal.dueno} onChange={handleChange} />
-        <input type="date" name="fechaNacimiento" value={animal.fechaNacimiento} onChange={handleChange} />
+        <input
+          type="date"
+          name="fechaNacimiento"
+          value={animal.fechaNacimiento}
+          onChange={handleChange}
+        />
         <input name="numeroVaca" value={animal.numeroVaca} onChange={handleChange} />
         <input name="sexo" value={animal.sexo} onChange={handleChange} />
         <input type="number" name="vacunas" value={animal.vacunas} onChange={handleChange} />
         <input type="number" name="peso" value={animal.peso} onChange={handleChange} />
-        <button type="submit" style={{padding: 10, backgroundColor:"#2980b9", color:"white", border:"none", borderRadius:5, cursor:"pointer"}}>
+        <button
+          type="submit"
+          style={{
+            padding: 10,
+            backgroundColor: "#2980b9",
+            color: "white",
+            border: "none",
+            borderRadius: 5,
+            cursor: "pointer",
+          }}
+        >
           Guardar Cambios
         </button>
       </form>

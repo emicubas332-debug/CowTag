@@ -6,6 +6,9 @@ export default function Animales({ animales = [], nacimientos = [], sanidades = 
   const [formAnimal, setFormAnimal] = useState({ tagid: "", nombre: "", sexo: "", tipo: "", propietario: "", edad: "" });
   const [editAnimalId, setEditAnimalId] = useState(null);
 
+  // Tipos permitidos para no violar constraint en la base
+  const tiposValidos = ["Vaca", "Toro", "Ternero"];
+
   const onChange = (e) => setFormAnimal({ ...formAnimal, [e.target.name]: e.target.value });
 
   const resetForm = () => {
@@ -30,8 +33,17 @@ export default function Animales({ animales = [], nacimientos = [], sanidades = 
       alert("Tag y nombre son obligatorios.");
       return;
     }
+
+    if (!formAnimal.tipo || !tiposValidos.includes(formAnimal.tipo)) {
+      alert(`Tipo de animal no válido. Debe ser: ${tiposValidos.join(", ")}`);
+      return;
+    }
+
+    const animalData = { ...formAnimal };
+    if (animalData.edad) animalData.edad = Number(animalData.edad);
+
     try {
-      await guardarAnimal(formAnimal, editAnimalId);
+      await guardarAnimal(animalData, editAnimalId);
       resetForm();
     } catch (e) {
       alert("Error al guardar animal: " + e.message);
@@ -56,65 +68,20 @@ export default function Animales({ animales = [], nacimientos = [], sanidades = 
 
       {/* Formulario */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <input
-          type="text"
-          name="tagid"
-          placeholder="Tag RFID"
-          value={formAnimal.tagid}
-          onChange={onChange}
-          className="input flex-1"
-        />
-        <input
-          type="text"
-          name="nombre"
-          placeholder="Nombre"
-          value={formAnimal.nombre}
-          onChange={onChange}
-          className="input flex-1"
-        />
-        <input
-          type="number"
-          name="edad"
-          placeholder="Edad (meses)"
-          value={formAnimal.edad || ""}
-          onChange={onChange}
-          className="input flex-1"
-        />
-        <select
-          name="sexo"
-          value={formAnimal.sexo}
-          onChange={onChange}
-          className="input flex-1"
-        >
+        <input type="text" name="tagid" placeholder="Tag RFID" value={formAnimal.tagid} onChange={onChange} className="input flex-1" />
+        <input type="text" name="nombre" placeholder="Nombre" value={formAnimal.nombre} onChange={onChange} className="input flex-1" />
+        <input type="number" name="edad" placeholder="Edad (meses)" value={formAnimal.edad || ""} onChange={onChange} className="input flex-1" />
+        <select name="sexo" value={formAnimal.sexo} onChange={onChange} className="input flex-1">
           <option value="">Sexo</option>
           <option value="Macho">Macho</option>
           <option value="Hembra">Hembra</option>
         </select>
-        <select
-          name="tipo"
-          value={formAnimal.tipo}
-          onChange={onChange}
-          className="input flex-1"
-        >
+        <select name="tipo" value={formAnimal.tipo} onChange={onChange} className="input flex-1">
           <option value="">Tipo</option>
-          <option value="vaca">Vaca</option>
-          <option value="toro">Toro</option>
-          <option value="ternero">Ternero</option>
+          {tiposValidos.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input
-          type="text"
-          name="propietario"
-          placeholder="Propietario"
-          value={formAnimal.propietario || ""}
-          onChange={onChange}
-          className="input flex-1"
-        />
-        <button
-          onClick={handleSubmit}
-          className="btn primary"
-        >
-          {editAnimalId ? "Actualizar" : "Agregar"}
-        </button>
+        <input type="text" name="propietario" placeholder="Propietario" value={formAnimal.propietario || ""} onChange={onChange} className="input flex-1" />
+        <button onClick={handleSubmit} className="btn primary">{editAnimalId ? "Actualizar" : "Agregar"}</button>
       </div>
 
       {/* Tabla */}
@@ -137,9 +104,7 @@ export default function Animales({ animales = [], nacimientos = [], sanidades = 
           <tbody>
             {animales.length === 0 ? (
               <tr>
-                <td colSpan="10" className="center helper py-4">
-                  No hay animales registrados.
-                </td>
+                <td colSpan="10" className="center helper py-4">No hay animales registrados.</td>
               </tr>
             ) : (
               animales.map((a) => (

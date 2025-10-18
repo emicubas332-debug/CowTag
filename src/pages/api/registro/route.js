@@ -1,14 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/firebase/firebaseConfig"; // Ajusta la ruta si usas otra
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  arrayUnion,
-  Timestamp,
-} from "firebase/firestore";
+import { supabase } from "@/supabaseClient"; // Ajusta la ruta si tu cliente está en otra carpeta
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -19,24 +10,34 @@ export async function GET(request) {
   }
 
   try {
-    const animalesRef = collection(db, "animales");
-    const q = query(animalesRef, where("tagID", "==", uid));
-    const snapshot = await getDocs(q);
+    // Buscar el animal por tagID
+    const { data, error } = await supabase
+      .from("animales")
+      .select("*")
+      .eq("tagID", uid)
+      .limit(1)
+      .single(); // obtenemos un solo registro
 
-    if (snapshot.empty) {
+    if (error || !data) {
       return NextResponse.json({ error: "Tag no registrado" }, { status: 404 });
     }
 
-    const docSnap = snapshot.docs[0];
-    const docRef = docSnap.ref;
+    // Actualizar historialEscaneos agregando la fecha actual
+    const { error: updateError } = await supabase
+      .from("animales")
+      .update({
+        historialEscaneos: supabase.raw(`array_append(historialEscaneos, ?)`, [
+          { fecha: new Date().toISOString() },
+        ]),
+      })
+      .eq("id", data.id);
 
-    // Agregar fecha del escaneo al historial
-    await updateDoc(docRef, {
-      historialEscaneos: arrayUnion({ fecha: Timestamp.now() }),
-    });
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
 
     return NextResponse.json({ mensaje: "Escaneo registrado correctamente" });
-  } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

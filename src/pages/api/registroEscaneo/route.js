@@ -1,7 +1,6 @@
 // src/pages/api/registroEscaneo.js (o src/app/api/registroEscaneo/route.js si usas app router)
 
-import { db } from "../../../firebase/firebaseConfig"; // Ajusta ruta
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { supabase } from "@/lib/supabaseConfig";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -15,13 +14,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    await addDoc(collection(db, "escaneos"), {
-      uid,
-      fecha: serverTimestamp(),
-    });
+    const { error } = await supabase
+      .from("escaneos")
+      .insert([{ uid, fecha: new Date().toISOString() }]);
+
+    if (error) {
+      return res.status(500).json({ message: "Error interno: " + error.message });
+    }
 
     return res.status(200).json({ message: "Escaneo registrado" });
-  } catch (error) {
-    return res.status(500).json({ message: "Error interno: " + error.message });
+  } catch (err) {
+    return res.status(500).json({ message: "Error interno: " + err.message });
   }
 }

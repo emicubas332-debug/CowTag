@@ -1,5 +1,6 @@
-import { db } from "../../firebase/firebaseConfig";
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion } from "firebase/firestore";
+// src/pages/api/registroAnimal.js
+
+import { supabase } from "@/lib/supabase";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
     numeroVaca,
     sexo,
     cantidadVacunas,
-    peso
+    peso,
   } = req.body;
 
   if (!tagID) {
@@ -23,36 +24,44 @@ export default async function handler(req, res) {
   }
 
   try {
-    const animalesRef = collection(db, "animales");
-    const q = query(animalesRef, where("tagID", "==", tagID));
-    const snapshot = await getDocs(q);
+    // Buscar animal por tagID
+    const { data: existingAnimal, error: selectError } = await supabase
+      .from("animales")
+      .select("*")
+      .eq("tagID", tagID)
+      .limit(1)
+      .single();
 
-    if (snapshot.empty) {
-      // Crear nuevo documento
-      const data = {
-        tagID,
-        nombre: nombre || "",
-        dueño: dueño || "",
-        fechaNacimiento: fechaNacimiento || "",
-        numeroVaca: numeroVaca || "",
-        sexo: sexo || "",
-        cantidadVacunas: cantidadVacunas || 0,
-        peso: peso || 0,
-        historialEscaneos: [{ fecha: new Date().toISOString(), lector: lector || "desconocido" }],
-      };
-      const docRef = await addDoc(animalesRef, data);
-      return res.status(201).json({ message: "Animal registrado", id: docRef.id });
+    if (selectError && selectError.code !== "PGRST116") {
+      return res.status(500).json({ error: selectError.message });
+    }
+
+    if (!existingAnimal) {
+      // Crear nuevo animal
+      const { data, error: insertError } = await supabase
+        .from("animales")
+        .insert([{
+          tagID,
+          nombre: nombre || "",
+          dueño: dueño || "",
+          fechaNacimiento: fechaNacimiento || "",
+          numeroVaca: numeroVaca || "",
+          sexo: sexo || "",
+          cantidadVacunas: cantidadVacunas || 0,
+          peso: peso || 0,
+          historialEscaneos: [{ fecha: new Date().toISOString(), lector: lector || "desconocido" }],
+        }]);
+
+      if (insertError) return res.status(500).json({ error: insertError.message });
+      return res.status(201).json({ message: "Animal registrado", id: data[0].id });
     } else {
-      // Actualizar historial
-      const animalDoc = snapshot.docs[0];
-      const docRef = doc(db, "animales", animalDoc.id);
-
-      // También, si envían datos nuevos, actualizar esos campos (excepto historial)
+      // Actualizar historialEscaneos y campos si vienen
       const updateData = {
-        historialEscaneos: arrayUnion({ fecha: new Date().toISOString(), lector: lector || "desconocido" }),
+        historialEscaneos: supabase.raw(`array_append(historialEscaneos, ?)`, [
+          { fecha: new Date().toISOString(), lector: lector || "desconocido" },
+        ]),
       };
 
-      // Actualizar solo si hay datos nuevos (evita borrar campos)
       if (nombre) updateData.nombre = nombre;
       if (dueño) updateData.dueño = dueño;
       if (fechaNacimiento) updateData.fechaNacimiento = fechaNacimiento;
@@ -61,10 +70,15 @@ export default async function handler(req, res) {
       if (cantidadVacunas !== undefined) updateData.cantidadVacunas = cantidadVacunas;
       if (peso !== undefined) updateData.peso = peso;
 
-      await updateDoc(docRef, updateData);
-      return res.status(200).json({ message: "Animal actualizado y historial agregado", id: animalDoc.id });
+      const { error: updateError } = await supabase
+        .from("animales")
+        .update(updateData)
+        .eq("id", existingAnimal.id);
+
+      if (updateError) return res.status(500).json({ error: updateError.message });
+      return res.status(200).json({ message: "Animal actualizado y historial agregado", id: existingAnimal.id });
     }
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }

@@ -3,24 +3,48 @@
 import { useState } from "react";
 
 export default function Sanidades({ sanidades = [], animales = [], guardarSanidad }) {
-  const [form, setForm] = useState({ animalId: "", fecha: "", tipo: "", dosis: "" });
+  const [form, setForm] = useState({
+    animalido: "", // todavía string, se convertirá a integer al enviar
+    fecha: "",
+    tipo: "",
+    dosis: "",
+  });
 
-  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  const resetForm = () => setForm({ animalId: "", fecha: "", tipo: "", dosis: "" });
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+  };
+
+  const resetForm = () => {
+    setForm({ animalido: "", fecha: "", tipo: "", dosis: "" });
+  };
 
   const handleSubmit = async () => {
-    if (!form.animalId || !form.fecha || !form.tipo || !form.dosis) {
-      alert("Por favor completa todos los campos");
+    // Validación de campos obligatorios
+    if (!form.animalido || !form.fecha || !form.tipo || !form.dosis) {
+      alert("Todos los campos son obligatorios");
       return;
     }
-    await guardarSanidad(form);
-    resetForm();
+
+    const sanidadData = {
+      animalido: Number(form.animalido), // conversión correcta aquí
+      fecha: form.fecha,
+      tipo: form.tipo,
+      dosis: Number(form.dosis),         // conversión correcta aquí
+    };
+
+    try {
+      await guardarSanidad(sanidadData);
+      resetForm();
+    } catch (error) {
+      alert("Error al guardar sanidad: " + error.message);
+    }
   };
 
-  // Función para contar vacunas por animal
-  const vacunasPorAnimal = (animalId) => {
-    return sanidades.filter(s => s.animalId === animalId).length;
-  };
+  const vacunasPorAnimal = (animalId) =>
+    sanidades.filter(
+      (s) => s.animalido === Number(animalId) && s.tipo.toLowerCase().includes("vacuna")
+    ).length;
 
   return (
     <div className="p-4 bg-white shadow-lg rounded-lg">
@@ -30,15 +54,16 @@ export default function Sanidades({ sanidades = [], animales = [], guardarSanida
         Total vacunas aplicadas: {sanidades.length}
       </div>
 
+      {/* Formulario */}
       <div className="flex flex-wrap gap-2 mb-4">
         <select
-          name="animalId"
-          value={form.animalId}
+          name="animalido"
+          value={form.animalido}
           onChange={onChange}
           className="border p-2 rounded flex-1"
         >
           <option value="">Seleccionar animal</option>
-          {animales.map(a => (
+          {animales.map((a) => (
             <option key={a.id} value={a.id}>
               {a.nombre} ({vacunasPorAnimal(a.id)} vacunas)
             </option>
@@ -61,7 +86,7 @@ export default function Sanidades({ sanidades = [], animales = [], guardarSanida
           className="border p-2 rounded flex-1"
         />
         <input
-          type="text"
+          type="number"
           placeholder="Dosis"
           name="dosis"
           value={form.dosis}
@@ -76,6 +101,7 @@ export default function Sanidades({ sanidades = [], animales = [], guardarSanida
         </button>
       </div>
 
+      {/* Tabla */}
       <div className="overflow-x-auto">
         <table className="min-w-full border border-gray-200 rounded-lg">
           <thead className="bg-yellow-600 text-white">
@@ -84,22 +110,30 @@ export default function Sanidades({ sanidades = [], animales = [], guardarSanida
               <th className="px-4 py-2">Fecha</th>
               <th className="px-4 py-2">Tipo</th>
               <th className="px-4 py-2">Dosis</th>
-              <th className="px-4 py-2">Total Vacunas</th>
+              <th className="px-4 py-2">Vacunas aplicadas</th>
             </tr>
           </thead>
           <tbody>
-            {sanidades.map(s => {
-              const animal = animales.find(a => a.id === s.animalId) || {};
-              return (
-                <tr key={s.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2">{animal.nombre || "-"}</td>
-                  <td className="px-4 py-2">{s.fecha}</td>
-                  <td className="px-4 py-2">{s.tipo}</td>
-                  <td className="px-4 py-2">{s.dosis}</td>
-                  <td className="px-4 py-2">{vacunasPorAnimal(s.animalId)}</td>
-                </tr>
-              );
-            })}
+            {sanidades.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="text-center py-4">
+                  No hay registros de sanidad.
+                </td>
+              </tr>
+            ) : (
+              sanidades.map((s) => {
+                const animal = animales.find((a) => a.id === s.animalido) || {};
+                return (
+                  <tr key={s.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-2">{animal.nombre || "-"}</td>
+                    <td className="px-4 py-2">{new Date(s.fecha).toLocaleDateString()}</td>
+                    <td className="px-4 py-2">{s.tipo}</td>
+                    <td className="px-4 py-2">{s.dosis}</td>
+                    <td className="px-4 py-2">{vacunasPorAnimal(s.animalido)}</td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

@@ -1,14 +1,6 @@
 // src/pages/api/registroEscaneo.js
-import { db } from "../../firebase/firebaseConfig";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  arrayUnion,
-  Timestamp,
-} from "firebase/firestore";
+
+import { supabase } from "@/lib/supabase";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -19,25 +11,38 @@ export default async function handler(req, res) {
   if (!uid) return res.status(400).json({ error: "Falta parámetro uid" });
 
   try {
-    const animalesRef = collection(db, "animales");
-    const q = query(animalesRef, where("tagID", "==", uid));
-    const snapshot = await getDocs(q);
+    // Buscar el animal por tagID
+    const { data: animal, error: selectError } = await supabase
+      .from("animales")
+      .select("*")
+      .eq("tagID", uid)
+      .limit(1)
+      .single();
 
-    if (snapshot.empty) {
+    if (selectError && selectError.code !== "PGRST116") {
+      // PGRST116 = not found
+      return res.status(500).json({ error: selectError.message });
+    }
+
+    if (!animal) {
       return res.status(404).json({ error: "Tag no registrado" });
     }
 
-    const docSnap = snapshot.docs[0];
-    const docRef = docSnap.ref;
+    // Actualizar historialEscaneos agregando nueva fecha
+    const { error: updateError } = await supabase
+      .from("animales")
+      .update({
+        historialEscaneos: supabase.raw(
+          "array_append(historialEscaneos, ?)",
+          [{ fecha: new Date().toISOString() }]
+        ),
+      })
+      .eq("id", animal.id);
 
-    await updateDoc(docRef, {
-      historialEscaneos: arrayUnion({
-        fecha: Timestamp.now(),
-      }),
-    });
+    if (updateError) return res.status(500).json({ error: updateError.message });
 
     return res.status(200).json({ mensaje: "Escaneo registrado correctamente" });
-  } catch (error) {
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 }

@@ -49,7 +49,7 @@ export default function Home() {
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
-        router.push("/login"); // Redirige al login si no hay sesión
+        router.push("/login");
       } else {
         setUser(data.session.user);
         loadAllData();
@@ -80,9 +80,8 @@ export default function Home() {
   }, [router]);
 
   if (loadingUser) return <p className="text-center mt-20">⏳ Verificando sesión…</p>;
-  if (!user) return null; // Evita renderizar Home mientras se redirige
+  if (!user) return null;
 
-  // ✨ Mostrar mensaje temporal
   const mostrarMensaje = (texto) => {
     setMensaje(texto);
     setTimeout(() => setMensaje(""), 2500);
@@ -123,10 +122,16 @@ export default function Home() {
   // 🥛 Guardar producción
   const guardarProduccion = async (prod) => {
     try {
-      if (!prod.animalId || !prod.fecha || !prod.tipoProduccion || !prod.cantidad)
+      if (!prod.animalido || !prod.fecha || !prod.tipoProduccion || !prod.cantidad)
         throw new Error("Todos los campos son obligatorios");
 
-      const { data, error } = await supabase.from("producciones").insert([prod]).select();
+      const prodData = {
+        ...prod,
+        animalido: Number(prod.animalido),
+        cantidad: Number(prod.cantidad),
+      };
+
+      const { data, error } = await supabase.from("producciones").insert([prodData]).select();
       if (error) throw error;
       if (Array.isArray(data)) setProducciones((prev) => [...prev, ...data]);
 
@@ -139,10 +144,16 @@ export default function Home() {
   // 💉 Guardar sanidad
   const guardarSanidad = async (san) => {
     try {
-      if (!san.animalId || !san.fecha || !san.tipo || !san.dosis)
+      if (!san.animalido || !san.fecha || !san.tipo || !san.dosis)
         throw new Error("Todos los campos son obligatorios");
 
-      const { data, error } = await supabase.from("sanidades").insert([san]).select();
+      const sanData = {
+        ...san,
+        animalido: Number(san.animalido),
+        dosis: Number(san.dosis),
+      };
+
+      const { data, error } = await supabase.from("sanidades").insert([sanData]).select();
       if (error) throw error;
       if (Array.isArray(data)) setSanidades((prev) => [...prev, ...data]);
 
@@ -158,7 +169,9 @@ export default function Home() {
       if (!nac.madreId || !nac.padreId || !nac.fecha || !nac.cantidad)
         throw new Error("Todos los campos son obligatorios");
 
-      const { data, error } = await supabase.from("nacimientos").insert([nac]).select();
+      const nacData = { ...nac, cantidad: Number(nac.cantidad) };
+
+      const { data, error } = await supabase.from("nacimientos").insert([nacData]).select();
       if (error) throw error;
       if (Array.isArray(data)) setNacimientos((prev) => [...prev, ...data]);
 
