@@ -1,0 +1,185 @@
+/* CONTENEDOR PRINCIPAL */
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+}
+
+/* TITULOS */
+h1, h2 {
+  color: #4F46E5; /* Indigo */
+  margin-bottom: 10px;
+}
+
+/* SECCIONES DE FORMULARIO */
+.form-section {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.form-section h2 {
+  margin-bottom: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.form-grid input,
+.form-grid select {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.form-grid input:focus,
+.form-grid select:focus {
+  border-color: #4F46E5;
+  box-shadow: 0 0 5px rgba(79, 70, 229, 0.3);
+}
+
+/* BOTONES */
+.form-actions {
+  margin-top: 15px;
+}
+
+.btn-primary {
+  background-color: #4F46E5;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #4338ca;
+}
+
+.btn-danger {
+  background-color: #EF4444;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.btn-danger:hover {
+  background-color: #DC2626;
+}
+
+.btn-edit {
+  background-color: #FACC15;
+  color: #1F2937;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+}
+
+.btn-edit:hover {
+  background-color: #EAB308;
+}
+
+/* TABLAS */
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.table th, .table td {
+  padding: 12px 10px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.table th {
+  background-color: #4F46E5;
+  color: white;
+}
+
+.table tr:hover {
+  background-color: #f3f4f6;
+  transition: 0.2s;
+}
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+  color: white;
+}
+
+.badge-primary { background-color: #4F46E5; }
+.badge-success { background-color: #10B981; }
+.badge-warning { background-color: #F59E0B; }
+.badge-danger { background-color: #EF4444; }
+
+/* HELPER CLASSES */
+.center { text-align: center; }
+.text-muted { color: #6B7280; }
+
+/* --- NUEVA SECCIÓN ESTADÍSTICAS --- */
+.stats-container {
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+}
+
+.stats-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #4F46E5;
+  font-weight: 600;
+}
+
+.chart-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  align-items: center;
+}
+
+.chart-section canvas {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chart-section {
+    grid-template-columns: 1fr;
+  }
+}
