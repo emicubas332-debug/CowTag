@@ -1,16 +1,22 @@
-// Ejemplo simple dentro de un componente React que muestra un animal y su historial
 export default function AnimalDetalle({ animal }) {
+  // Manejo si animal es undefined
+  if (!animal) {
+    return <p>Animal no encontrado</p>;
+  }
+
+  const historial = animal.historialEscaneos || [];
+
   return (
     <div>
-      <h2>{animal.nombre}</h2>
+      <h2>{animal.nombre || "Nombre no disponible"}</h2>
       <h3>Historial de Escaneos:</h3>
 
-      {/* Para depurar qué llega exactamente */}
-      <pre>{JSON.stringify(animal.historialEscaneos, null, 2)}</pre>
+      {/* Depuración */}
+      <pre>{JSON.stringify(historial, null, 2)}</pre>
 
-      {animal.historialEscaneos?.length === 0 && <p>No hay escaneos registrados</p>}
+      {historial.length === 0 && <p>No hay escaneos registrados</p>}
 
-      {animal.historialEscaneos?.map((item, index) => {
+      {historial.map((item, index) => {
         let fecha;
         if (item.fecha?.toDate) {
           fecha = item.fecha.toDate();
