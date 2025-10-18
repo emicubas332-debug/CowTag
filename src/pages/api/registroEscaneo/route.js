@@ -1,6 +1,6 @@
 // src/pages/api/registroEscaneo.js (o src/app/api/registroEscaneo/route.js si usas app router)
 
-import { supabase } from "@/lib/supabaseConfig";
+import { supabase } from "../../../lib/supabaseConfig";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {

@@ -1,6 +1,6 @@
 // src/pages/api/registroAnimal.js
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

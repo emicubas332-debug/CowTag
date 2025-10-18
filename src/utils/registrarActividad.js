@@ -1,5 +1,5 @@
 // src/utils/registrarActividad.js
-import { supabase } from "@/lib/supabase";
+import { supabase } from "../lib/supabase";
 
 /**
  * Registra una nueva actividad de escaneo RFID en el animal correspondiente.
