@@ -1,42 +1,57 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../lib/supabase"; // Ajusta la ruta si tu cliente está en otra carpeta
+import { supabase } from "../../../lib/supabase";
 
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const uid = searchParams.get("uid");
+export async function POST(request) {
+  const AUTH_KEY = process.env.ESP_API_KEY; // tu token secreto
 
-  if (!uid) {
-    return NextResponse.json({ error: "Falta parámetro uid" }, { status: 400 });
+  // Validar header de autorización
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
+  const token = authHeader.slice(7);
+  if (token !== AUTH_KEY) {
+    return NextResponse.json({ error: "Token inválido" }, { status: 403 });
   }
 
   try {
-    // Buscar el animal por tagID
-    const { data, error } = await supabase
+    const { uid } = await request.json();
+    if (!uid) {
+      return NextResponse.json({ error: "Falta parámetro uid" }, { status: 400 });
+    }
+
+    // Buscar animal con ese tagID
+    const { data: animal, error: findError } = await supabase
       .from("animales")
       .select("*")
       .eq("tagID", uid)
-      .limit(1)
-      .single(); // obtenemos un solo registro
+      .single();
 
-    if (error || !data) {
+    if (findError || !animal) {
       return NextResponse.json({ error: "Tag no registrado" }, { status: 404 });
     }
 
-    // Actualizar historialEscaneos agregando la fecha actual
+    // Agregar nueva lectura
+    const nuevoEscaneo = { fecha: new Date().toISOString() };
+    const historialActual = animal.historialEscaneos || [];
+
     const { error: updateError } = await supabase
       .from("animales")
       .update({
-        historialEscaneos: supabase.raw(`array_append(historialEscaneos, ?)`, [
-          { fecha: new Date().toISOString() },
-        ]),
+        historialEscaneos: [...historialActual, nuevoEscaneo],
       })
-      .eq("id", data.id);
+      .eq("id", animal.id);
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ mensaje: "Escaneo registrado correctamente" });
+    return NextResponse.json({
+      mensaje: "✅ Escaneo registrado correctamente",
+      tagID: uid,
+      fecha: nuevoEscaneo.fecha,
+    });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
