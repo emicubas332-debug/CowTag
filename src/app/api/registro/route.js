@@ -1,6 +1,6 @@
 // src/app/api/registro/route.js
 import { NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabase"; // ajusta según tu proyecto
+import { supabase } from "../../../lib/supabase"; // ajusta según tu proyecto
 
 export async function POST(request) {
   const AUTH_KEY = process.env.ESP_API_KEY; // tu token secreto
@@ -26,7 +26,7 @@ export async function POST(request) {
     const { data: animal, error: findError } = await supabase
       .from("animales")
       .select("*")
-      .eq("tagID", uid)
+      .eq("tagid", uid)
       .single();
 
     if (findError || !animal) {
@@ -50,7 +50,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       mensaje: "✅ Escaneo registrado correctamente",
-      tagID: uid,
+      tagid: uid,
       fecha: nuevoEscaneo.fecha,
     });
   } catch (err) {
