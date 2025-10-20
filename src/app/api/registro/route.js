@@ -1,28 +1,25 @@
-// src/pages/api/registro.js
-import { supabase } from "../../../lib/supabase";
+// src/app/api/registro/route.js
+import { NextResponse } from "next/server";
+import { supabase } from "../../../../lib/supabase"; // ajusta según tu proyecto
 
-export default async function handler(req, res) {
+export async function POST(request) {
   const AUTH_KEY = process.env.ESP_API_KEY; // tu token secreto
 
-  // Solo POST permitido
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido" });
+  // Validar header Authorization
+  const authHeader = request.headers.get("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  // Validar token en header Authorization
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "No autorizado" });
-  }
   const token = authHeader.slice(7);
   if (token !== AUTH_KEY) {
-    return res.status(403).json({ error: "Token inválido" });
+    return NextResponse.json({ error: "Token inválido" }, { status: 403 });
   }
 
   try {
-    const { uid } = req.body;
+    const { uid } = await request.json();
     if (!uid) {
-      return res.status(400).json({ error: "Falta parámetro uid" });
+      return NextResponse.json({ error: "Falta parámetro uid" }, { status: 400 });
     }
 
     // Buscar animal por tagID
@@ -33,7 +30,7 @@ export default async function handler(req, res) {
       .single();
 
     if (findError || !animal) {
-      return res.status(404).json({ error: "Tag no registrado" });
+      return NextResponse.json({ error: "Tag no registrado" }, { status: 404 });
     }
 
     // Agregar nueva lectura al historial
@@ -48,15 +45,15 @@ export default async function handler(req, res) {
       .eq("id", animal.id);
 
     if (updateError) {
-      return res.status(500).json({ error: updateError.message });
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    return res.status(200).json({
+    return NextResponse.json({
       mensaje: "✅ Escaneo registrado correctamente",
       tagID: uid,
       fecha: nuevoEscaneo.fecha,
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
