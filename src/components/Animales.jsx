@@ -6,7 +6,6 @@ export default function Animales({ animales = [], nacimientos = [], sanidades = 
   const [formAnimal, setFormAnimal] = useState({ tagid: "", nombre: "", sexo: "", tipo: "", propietario: "", edad: "" });
   const [editAnimalId, setEditAnimalId] = useState(null);
 
-  // Tipos permitidos para no violar constraint en la base
   const tiposValidos = ["Vaca", "Toro", "Ternero"];
 
   const onChange = (e) => setFormAnimal({ ...formAnimal, [e.target.name]: e.target.value });
@@ -63,70 +62,46 @@ export default function Animales({ animales = [], nacimientos = [], sanidades = 
   };
 
   return (
-    <div className="historial-wrapper">
-      <h2 className="historial-title mb-6">🐄 Animales</h2>
+    <div className="p-6 max-w-7xl mx-auto">
+      <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">🐄 Animales</h2>
 
       {/* Formulario */}
-      <div className="flex flex-wrap gap-3 mb-6">
-        <input type="text" name="tagid" placeholder="Tag RFID" value={formAnimal.tagid} onChange={onChange} className="input flex-1" />
-        <input type="text" name="nombre" placeholder="Nombre" value={formAnimal.nombre} onChange={onChange} className="input flex-1" />
-        <input type="number" name="edad" placeholder="Edad (meses)" value={formAnimal.edad || ""} onChange={onChange} className="input flex-1" />
-        <select name="sexo" value={formAnimal.sexo} onChange={onChange} className="input flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+        <input type="text" name="tagid" placeholder="Tag RFID" value={formAnimal.tagid} onChange={onChange} className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+        <input type="text" name="nombre" placeholder="Nombre" value={formAnimal.nombre} onChange={onChange} className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+        <input type="number" name="edad" placeholder="Edad (meses)" value={formAnimal.edad || ""} onChange={onChange} className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+        <select name="sexo" value={formAnimal.sexo} onChange={onChange} className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none">
           <option value="">Sexo</option>
           <option value="Macho">Macho</option>
           <option value="Hembra">Hembra</option>
         </select>
-        <select name="tipo" value={formAnimal.tipo} onChange={onChange} className="input flex-1">
+        <select name="tipo" value={formAnimal.tipo} onChange={onChange} className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none">
           <option value="">Tipo</option>
           {tiposValidos.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <input type="text" name="propietario" placeholder="Propietario" value={formAnimal.propietario || ""} onChange={onChange} className="input flex-1" />
-        <button onClick={handleSubmit} className="btn primary">{editAnimalId ? "Actualizar" : "Agregar"}</button>
+        <input type="text" name="propietario" placeholder="Propietario" value={formAnimal.propietario || ""} onChange={onChange} className="border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-yellow-400 focus:outline-none" />
+        <button onClick={handleSubmit} className="col-span-1 md:col-span-4 bg-yellow-600 text-white font-semibold py-3 rounded-lg hover:bg-yellow-700 transition-all">{editAnimalId ? "Actualizar" : "Agregar"}</button>
       </div>
 
-      {/* Tabla */}
-      <div className="table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Tag</th>
-              <th>Nombre</th>
-              <th>Sexo</th>
-              <th>Edad</th>
-              <th>Tipo</th>
-              <th>Categoría</th>
-              <th>Crías</th>
-              <th>Vacunas</th>
-              <th>Propietario</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {animales.length === 0 ? (
-              <tr>
-                <td colSpan="10" className="center helper py-4">No hay animales registrados.</td>
-              </tr>
-            ) : (
-              animales.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.tagid}</td>
-                  <td>{a.nombre}</td>
-                  <td>{a.sexo}</td>
-                  <td>{a.edad || "-"}</td>
-                  <td>{a.tipo || "-"}</td>
-                  <td>{categoriaGanadera(a.edad, a.sexo)}</td>
-                  <td>{contarCrias(a.id)}</td>
-                  <td>{contarVacunas(a.id)}</td>
-                  <td>{a.propietario || "-"}</td>
-                  <td className="flex gap-2">
-                    <button onClick={() => handleEdit(a)} className="btn warn">Editar</button>
-                    <button onClick={() => eliminarAnimal(a.id)} className="btn danger">Eliminar</button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* Lista de animales */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {animales.length === 0 && <p className="col-span-full text-center text-gray-500 py-6">No hay animales registrados.</p>}
+        {animales.map((a) => (
+          <div key={a.id} className="bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition-all border-l-4 border-yellow-500">
+            <h3 className="text-xl font-bold mb-2">{a.nombre} ({a.tipo})</h3>
+            <p className="text-gray-700 mb-1"><strong>Tag:</strong> {a.tagid}</p>
+            <p className="text-gray-700 mb-1"><strong>Edad:</strong> {a.edad || "-"}</p>
+            <p className="text-gray-700 mb-1"><strong>Sexo:</strong> {a.sexo}</p>
+            <p className="text-gray-700 mb-1"><strong>Categoría:</strong> {categoriaGanadera(a.edad, a.sexo)}</p>
+            <p className="text-gray-700 mb-1"><strong>Crías:</strong> {contarCrias(a.id)}</p>
+            <p className="text-gray-700 mb-1"><strong>Vacunas:</strong> {contarVacunas(a.id)}</p>
+            <p className="text-gray-700 mb-3"><strong>Propietario:</strong> {a.propietario || "-"}</p>
+            <div className="flex gap-2">
+              <button onClick={() => handleEdit(a)} className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition-all">Editar</button>
+              <button onClick={() => eliminarAnimal(a.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-all">Eliminar</button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

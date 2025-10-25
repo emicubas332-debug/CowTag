@@ -1,32 +1,43 @@
-// src/firebase/escaneo.js
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
-import { db } from "./firebaseConfig";
+// /lib/escaneo.js
+import { supabase } from "./supabase";
 
 export async function registrarEscaneo(tagID) {
-  const animalesRef = collection(db, "animales");
-  const q = query(animalesRef, where("tagID", "==", tagID));
-  const querySnapshot = await getDocs(q);
+  // Buscar animal por tagID
+  const { data: animales, error: errorSelect } = await supabase
+    .from("animales")
+    .select("*")
+    .eq("tagID", tagID)
+    .limit(1);
 
-  if (querySnapshot.empty) {
+  if (errorSelect) {
+    console.error("Error al buscar animal:", errorSelect);
+    return false;
+  }
+
+  if (!animales || animales.length === 0) {
     console.log("El tag no está registrado en el sistema");
     return false;
   }
 
-  const animalDoc = querySnapshot.docs[0];
-  const animalRef = doc(db, "animales", animalDoc.id);
-  const animalData = animalDoc.data();
+  const animal = animales[0];
 
-  const historial = animalData.historialEscaneos || [];
-  const nuevoContador = historial.length + 1;
+  // Preparar historial
+  const historialEscaneos = animal.historialEscaneos || [];
+  const nuevoContador = historialEscaneos.length + 1;
 
-  await updateDoc(animalRef, {
-    historialEscaneos: arrayUnion({
-      fecha: serverTimestamp(),
-      contador: nuevoContador
+  // Agregar nuevo escaneo
+  const { error: errorUpdate } = await supabase
+    .from("animales")
+    .update({
+      historialEscaneos: [...historialEscaneos, { fecha: new Date(), contador: nuevoContador }]
     })
-  });
+    .eq("id", animal.id);
+
+  if (errorUpdate) {
+    console.error("Error al actualizar historial:", errorUpdate);
+    return false;
+  }
 
   console.log(`Escaneo registrado para tag ${tagID}, total escaneos: ${nuevoContador}`);
-
   return true;
 }

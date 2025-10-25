@@ -1,6 +1,6 @@
 // src/app/api/registro/route.js
 import { NextResponse } from "next/server";
-import { supabase } from "../../../lib/supabase"; // ajusta según tu proyecto
+import { supabase } from "../../../lib/supabase";
 
 export async function POST(request) {
   const AUTH_KEY = process.env.ESP_API_KEY; // tu token secreto
@@ -17,42 +17,33 @@ export async function POST(request) {
   }
 
   try {
-    const { uid } = await request.json();
-    if (!uid) {
-      return NextResponse.json({ error: "Falta parámetro uid" }, { status: 400 });
+    const { uid, tag, accion, nombre } = await request.json();
+
+    if (!uid || !tag) {
+      return NextResponse.json({ error: "Falta parámetro uid o tag" }, { status: 400 });
     }
 
-    // Buscar animal por tagID
-    const { data: animal, error: findError } = await supabase
-      .from("animales")
-      .select("*")
-      .eq("tagid", uid)
-      .single();
+    // Inserta la actividad en la tabla "actividades"
+    const { error: insertError } = await supabase.from("actividades").insert([
+      {
+        uid: uid,
+        tagid: tag.toLowerCase(), // asegurar minúsculas
+        nombre: nombre || null,
+        accion: accion || "lectura",
+        fecha: new Date().toISOString(),
+      },
+    ]);
 
-    if (findError || !animal) {
-      return NextResponse.json({ error: "Tag no registrado" }, { status: 404 });
-    }
-
-    // Agregar nueva lectura al historial
-    const nuevoEscaneo = { fecha: new Date().toISOString() };
-    const historialActual = animal.historialEscaneos || [];
-
-    const { error: updateError } = await supabase
-      .from("animales")
-      .update({
-        historialEscaneos: [...historialActual, nuevoEscaneo],
-      })
-      .eq("id", animal.id);
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
     return NextResponse.json({
-      mensaje: "✅ Escaneo registrado correctamente",
-      tagid: uid,
-      fecha: nuevoEscaneo.fecha,
+      mensaje: "✅ Actividad registrada correctamente",
+      tagid: tag.toLowerCase(),
+      fecha: new Date().toISOString(),
     });
+
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
