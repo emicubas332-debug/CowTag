@@ -17,7 +17,7 @@ export async function POST(request) {
   }
 
   try {
-    const { uid, tag, nombre, animal_id = null } = await request.json(); // animal_id opcional
+    const { uid, tag, nombre } = await request.json();
 
     if (!uid || !tag) {
       return NextResponse.json(
@@ -26,13 +26,32 @@ export async function POST(request) {
       );
     }
 
-    // Inserta la actividad en la tabla "actividades"
+    // 🔎 Buscar si el tag está registrado en "animales"
+    const { data: animal, error: searchError } = await supabase
+      .from("animales")
+      .select("id, nombre")
+      .eq("tagid", tag.toLowerCase())
+      .maybeSingle();
+
+    if (searchError) {
+      return NextResponse.json({ error: searchError.message }, { status: 500 });
+    }
+
+    // ❌ Si no existe, avisar
+    if (!animal) {
+      return NextResponse.json(
+        { error: "Tag no registrado en la base de datos" },
+        { status: 404 }
+      );
+    }
+
+    // ✅ Insertar la actividad
     const { error: insertError } = await supabase.from("actividades").insert([
       {
         uid: uid,
         tagid: tag.toLowerCase(),
-        nombre: nombre || null,
-        animal_id: animal_id, // si no se envía, será null
+        nombre: nombre || animal.nombre || null,
+        animal_id: animal.id,
         fecha: new Date().toISOString(),
       },
     ]);
@@ -44,6 +63,7 @@ export async function POST(request) {
     return NextResponse.json({
       mensaje: "✅ Actividad registrada correctamente",
       tagid: tag.toLowerCase(),
+      animal_id: animal.id,
       fecha: new Date().toISOString(),
     });
   } catch (err) {
