@@ -17,7 +17,7 @@ export async function POST(request) {
   }
 
   try {
-    const { uid, tag, nombre } = await request.json();
+    const { uid, tag, nombre, animal_id = null } = await request.json(); // animal_id opcional
 
     if (!uid || !tag) {
       return NextResponse.json(
@@ -26,12 +26,13 @@ export async function POST(request) {
       );
     }
 
-    // Inserta la actividad en la tabla "actividades" (sin el campo 'accion')
+    // Inserta la actividad en la tabla "actividades"
     const { error: insertError } = await supabase.from("actividades").insert([
       {
         uid: uid,
-        tagid: tag.toLowerCase(), // asegurar minúsculas
+        tagid: tag.toLowerCase(),
         nombre: nombre || null,
+        animal_id: animal_id, // si no se envía, será null
         fecha: new Date().toISOString(),
       },
     ]);
