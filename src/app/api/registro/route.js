@@ -17,19 +17,21 @@ export async function POST(request) {
   }
 
   try {
-    const { uid, tag, accion, nombre } = await request.json();
+    const { uid, tag, nombre } = await request.json();
 
     if (!uid || !tag) {
-      return NextResponse.json({ error: "Falta parámetro uid o tag" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Falta parámetro uid o tag" },
+        { status: 400 }
+      );
     }
 
-    // Inserta la actividad en la tabla "actividades"
+    // Inserta la actividad en la tabla "actividades" (sin el campo 'accion')
     const { error: insertError } = await supabase.from("actividades").insert([
       {
         uid: uid,
         tagid: tag.toLowerCase(), // asegurar minúsculas
         nombre: nombre || null,
-        accion: accion || "lectura",
         fecha: new Date().toISOString(),
       },
     ]);
@@ -43,7 +45,6 @@ export async function POST(request) {
       tagid: tag.toLowerCase(),
       fecha: new Date().toISOString(),
     });
-
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
